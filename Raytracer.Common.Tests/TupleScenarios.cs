@@ -61,6 +61,7 @@ public class TupleScenarios
 
     [Theory]
     [InlineData(3, -2, 5, 1, -2, 3, 1, 0, TupleType.Point)]
+    [InlineData(3, -2, 5, 0, -2, 3, 1, 0, TupleType.Vector)]
     public void When_adding_a_vector_to_a_vector_components_should_be_added(double x1, double y1, double z1, double w1, double x2, double y2, double z2, double w2, TupleType expectedType)
     {
         var from = new TupleBuilder().WithX(x1).WithY(y1).WithZ(z1).WithW(w1).Build();
@@ -69,13 +70,27 @@ public class TupleScenarios
         var actualResult = from + to;
         using (new AssertionScope())
         {
-            actualResult.X.Should().Be(1);
-            actualResult.Y.Should().Be(1);
-            actualResult.Z.Should().Be(6);
-            actualResult.W.Should().Be(1);
+            actualResult.X.Should().Be(x1 + x2);
+            actualResult.Y.Should().Be(y1 + y2);
+            actualResult.Z.Should().Be(z1 + z2);
+            actualResult.W.Should().Be(w1 + w2);
             actualResult.Type.Should().Be(expectedType);
         }
     }
+
+    [Fact]
+    public void Adding_two_points_should_throw_exception()
+    {
+
+        Action act = () =>
+        {
+            var point = (Tuple.Point() + Tuple.Point());
+        };
+
+        act.Should().Throw<InvalidTupleAdditionException>().WithMessage("Cannot add two points.");
+    }
+    
+    
 }
 
 public static class TupleValues
@@ -110,7 +125,7 @@ public class Tuple(double x = default, double y = default, double z = default, d
         var result = new Tuple(a.X + b.X, a.Y + b.Y, a.Z + b.Z, a.W + b.W);
         if (result.W > TupleValues.PointComponent)
         {
-            throw new InvalidTupleAdditionException();
+            throw new InvalidTupleAdditionException("Cannot add two points.");
         }
 
         return result;
@@ -119,10 +134,7 @@ public class Tuple(double x = default, double y = default, double z = default, d
     
 }
 
-public class InvalidTupleAdditionException : Exception
-{
-    
-}
+public class InvalidTupleAdditionException(string message) : Exception(message);
 
 internal class TupleBuilder
 {
