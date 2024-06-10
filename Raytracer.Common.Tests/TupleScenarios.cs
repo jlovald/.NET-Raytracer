@@ -44,6 +44,19 @@ public class TupleScenarios
             actualPoint.W.Should().Be(1.0);
         }
     }
+    
+    [Fact]
+    public void When_creating_vector_should_create_point()
+    {
+        var actualPoint = Tuple.Vector(4, -4, 3);
+        using (new AssertionScope())
+        {
+            actualPoint.X.Should().Be(4);
+            actualPoint.Y.Should().Be(-4);
+            actualPoint.Z.Should().Be(3);
+            actualPoint.W.Should().Be(0.0);
+        }
+    }
 }
 
 public static class TupleValues
