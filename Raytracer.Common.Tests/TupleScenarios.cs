@@ -1,3 +1,4 @@
+using System.Drawing;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -6,8 +7,8 @@ namespace Raytracer.Common.Tests;
 public class TupleScenarios
 {
     [Theory]
-    [InlineData(4.3, 4.2, 3.1, 1.0, TupleType.Point)]
-    [InlineData(4.3, 4.2, 3.1, 0.0, TupleType.Vector)]
+    [InlineData(4.3, 4.2, 3.1, TupleValues.PointComponent, TupleType.Point)]
+    [InlineData(4.3, 4.2, 3.1, TupleValues.VectorComponent, TupleType.Vector)]
     public void When_w_equals_one_should_be_point(double x, double y, double z, double w, TupleType expectedType)
     {
         var actualTuple = new TupleBuilder().WithX(x).WithY(y).WithZ(z).WithW(w).Build();
@@ -17,9 +18,11 @@ public class TupleScenarios
 
     [Theory]
     [InlineData(4.3, 4.2, 3.1, 1.0)]
-    public void When_initializing_should_set_correct_values(double expectedX, double expectedY, double expectedZ, double expectedW)
+    public void When_initializing_should_set_correct_values(double expectedX, double expectedY, double expectedZ,
+        double expectedW)
     {
-        var actualTuple = new TupleBuilder().WithX(expectedX).WithY(expectedY).WithZ(expectedZ).WithW(expectedW).Build();
+        var actualTuple = new TupleBuilder().WithX(expectedX).WithY(expectedY).WithZ(expectedZ).WithW(expectedW)
+            .Build();
         using (new AssertionScope())
         {
             actualTuple.X.Should().Be(expectedX);
@@ -28,8 +31,27 @@ public class TupleScenarios
             actualTuple.W.Should().Be(expectedW);
         }
     }
+
+    [Fact]
+    public void When_creating_point_should_create_point()
+    {
+        var actualPoint = Tuple.Point(4, -4, 3);
+        using (new AssertionScope())
+        {
+            actualPoint.X.Should().Be(4);
+            actualPoint.Y.Should().Be(-4);
+            actualPoint.Z.Should().Be(3);
+            actualPoint.W.Should().Be(1.0);
+        }
+    }
 }
 
+public static class TupleValues
+{
+    public const double PointComponent = 1.0;
+    public const double VectorComponent = 0.0;
+
+}
 public class Tuple(double x = default, double y = default, double z = default, double w = default)
 {
     public double X { get; private set; } = x;
@@ -37,6 +59,16 @@ public class Tuple(double x = default, double y = default, double z = default, d
     public double Z { get; private set; } = z;
     public double W { get; private set; } = w;
 
+    public static Tuple Point(double x = default, double y = default, double z = default)
+    {
+        return new Tuple(x, y, z, TupleValues.PointComponent);
+    }
+    
+    public static Tuple Vector(double x = default, double y = default, double z = default)
+    {
+        return new Tuple(x, y, z, TupleValues.VectorComponent);
+    }
+    
     public TupleType Type => Math.Abs(W - 1.0) < 1e-6 ? TupleType.Point : TupleType.Vector;
 }
 
