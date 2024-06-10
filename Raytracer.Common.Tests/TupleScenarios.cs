@@ -7,6 +7,7 @@ public class TupleScenarios
 {
     [Theory]
     [InlineData(4.3, 4.2, 3.1, 1.0, TupleType.Point)]
+    [InlineData(4.3, 4.2, 3.1, 0.0, TupleType.Vector)]
     public void When_w_equals_one_should_be_point(double x, double y, double z, double w, TupleType expectedType)
     {
         var actualTuple = new TupleBuilder().WithX(x).WithY(y).WithZ(z).WithW(w).Build();
@@ -36,7 +37,7 @@ public class Tuple(double x = default, double y = default, double z = default, d
     public double Z { get; private set; } = z;
     public double W { get; private set; } = w;
 
-    public TupleType Type => Math.Abs(w - 1.0) < 1e-6 ? TupleType.Point : TupleType.Vector;
+    public TupleType Type => Math.Abs(W - 1.0) < 1e-6 ? TupleType.Point : TupleType.Vector;
 }
 
 internal class TupleBuilder
