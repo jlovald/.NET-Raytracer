@@ -67,6 +67,7 @@ public static class TupleValues
 }
 public class Tuple(double x = default, double y = default, double z = default, double w = default)
 {
+    private const double EPSILON = 0.00001;
     public double X { get; private set; } = x;
     public double Y { get; private set; } = y;
     public double Z { get; private set; } = z;
@@ -82,7 +83,7 @@ public class Tuple(double x = default, double y = default, double z = default, d
         return new Tuple(x, y, z, TupleValues.VectorComponent);
     }
     
-    public TupleType Type => Math.Abs(W - 1.0) < 1e-6 ? TupleType.Point : TupleType.Vector;
+    public TupleType Type => Math.Abs(W - 1.0) < EPSILON ? TupleType.Point : TupleType.Vector;
 }
 
 internal class TupleBuilder
