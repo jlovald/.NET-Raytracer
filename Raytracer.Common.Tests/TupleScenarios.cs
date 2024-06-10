@@ -1,6 +1,7 @@
 using System.Drawing;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace Raytracer.Common.Tests;
 
@@ -57,6 +58,24 @@ public class TupleScenarios
             actualPoint.W.Should().Be(0.0);
         }
     }
+
+    [Theory]
+    [InlineData(3, -2, 5, 1, -2, 3, 1, 0, TupleType.Point)]
+    public void When_adding_a_vector_to_a_vector_components_should_be_added(double x1, double y1, double z1, double w1, double x2, double y2, double z2, double w2, TupleType expectedType)
+    {
+        var from = new TupleBuilder().WithX(x1).WithY(y1).WithZ(z1).WithW(w1).Build();
+        var to = new TupleBuilder().WithX(x2).WithY(y2).WithZ(z2).WithW(w2).Build();
+
+        var actualResult = from + to;
+        using (new AssertionScope())
+        {
+            actualResult.X.Should().Be(1);
+            actualResult.Y.Should().Be(1);
+            actualResult.Z.Should().Be(6);
+            actualResult.W.Should().Be(1);
+            actualResult.Type.Should().Be(expectedType);
+        }
+    }
 }
 
 public static class TupleValues
@@ -84,6 +103,25 @@ public class Tuple(double x = default, double y = default, double z = default, d
     }
     
     public TupleType Type => Math.Abs(W - 1.0) < EPSILON ? TupleType.Point : TupleType.Vector;
+
+    public static Tuple operator +(Tuple a, Tuple b)
+    {
+        
+        var result = new Tuple(a.X + b.X, a.Y + b.Y, a.Z + b.Z, a.W + b.W);
+        if (result.W > TupleValues.PointComponent)
+        {
+            throw new InvalidTupleAdditionException();
+        }
+
+        return result;
+    }
+    
+    
+}
+
+public class InvalidTupleAdditionException : Exception
+{
+    
 }
 
 internal class TupleBuilder
