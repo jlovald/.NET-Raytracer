@@ -68,10 +68,10 @@ public static class TupleValues
 public class Tuple(double x = default, double y = default, double z = default, double w = default)
 {
     private const double EPSILON = 0.00001;
-    public double X { get; private set; } = x;
-    public double Y { get; private set; } = y;
-    public double Z { get; private set; } = z;
-    public double W { get; private set; } = w;
+    public double X { get; } = x;
+    public double Y { get; } = y;
+    public double Z { get; } = z;
+    public double W { get; } = w;
 
     public static Tuple Point(double x = default, double y = default, double z = default)
     {
@@ -89,10 +89,10 @@ public class Tuple(double x = default, double y = default, double z = default, d
 internal class TupleBuilder
 {
 
-    private double _x = 0;
-    private double _y = 0;
-    private double _z = 0;
-    private double _w = 0;
+    private double _x;
+    private double _y;
+    private double _z;
+    private double _w;
     
    
     public TupleBuilder WithX(double x)
