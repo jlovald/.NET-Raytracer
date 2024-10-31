@@ -116,10 +116,33 @@ public class MatrixScenarios
     [Fact]
     public void Transposing_a_matrix()
     {
-        var identityMatrix = Matrix<int>.IdentityMatrix(4);
-        var tuple = new Tuple(1, 2, 3, 4);
-        var actualTuple = (identityMatrix * tuple).ToTuple();
-        actualTuple.Should().Be(tuple);
+        var matrix = new Matrix<int>(new[,] {{0, 9, 3, 0}, {9, 8, 0, 8}, {1, 8, 5,3}, {0, 0, 5, 8}});
+        var actualResult = matrix.Transpose();
+        var expectedResult = new Matrix<int>(new[,] { { 0, 9, 1, 0 }, { 9, 8, 8, 0 }, { 3, 0, 5, 5 }, { 0, 8, 3, 8 } });
+        (actualResult == expectedResult).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Calculating_the_determinant_of_a_2x2_matrix()
+    {
+        var matrix = new Matrix<int>(new int[,] { { 1, 5 }, { -3, 2 } });
+        matrix.Determinant().Should().Be(17);
+    }
+    
+    [Fact]
+    public void Submatrix_of_3x3_should_be_2x2()
+    {
+        var matrix = new Matrix<int>(new int[,] { {1, 5, 0}, {-3, 2, 7}, {0, 6,-3} });
+        var res = matrix.SubMatrix(0, 2) == new Matrix<int>(new int[,] {{-3, 2}, {0, 6}});
+        res.Should().BeTrue();
+    }
+    
+    [Fact]
+    public void Submatrix_of_4x4_should_be_3x3()
+    {
+        var matrix = new Matrix<int>(new int[,] {{ -6,1,1,6}, {-8, 5, 8, 6}, {-1, 0, 8, 2}, {-7, 1, -1, 1}} );
+        var res = matrix.SubMatrix(2, 1) == new Matrix<int>(new int[,] {{-6, 1, 6}, {-8,8,6}, {-7,-1,1}});
+        res.Should().BeTrue();
     }
 }
 
@@ -277,6 +300,49 @@ public class Matrix<T> where T : INumber<T>
     
     public int Rows => _data.GetLength(0);
     public int Cols => _data.GetLength(1);
+
+    public Matrix<T> Transpose()
+    {
+        var matrix = new Matrix<T>(Cols, Rows);
+        for (int i = 0; i < Rows; i++)
+        {
+            for (int j = 0; j < Cols; j++)
+            {
+                matrix[j, i] = _data[i, j];
+            }
+        }
+
+        return matrix;
+    }
+
+    public T Determinant()
+    {
+        //  TODO: Improve
+        return _data[0,0] * _data[1,1] - _data[0,1] * _data[1,0];
+    }
+
+    public Matrix<T> SubMatrix(int x, int y)
+    {
+        if (x < 0 || x >= Cols) throw new Exception();
+        if (y < 0 || y >= Rows) throw new Exception();
+        var rowCount = Rows - 1;
+        var columnCount = Cols - 1;
+
+        var matrix = new Matrix<T>(rowCount, columnCount);
+        for (int i = 0; i < Rows; i++)
+        {
+            if(i == x) continue;
+            var xCoordinate = i > x ? i - 1 : i;
+            for (int j = 0; j < Cols; j++)
+            {
+                if(j == y) continue;
+                var yCoordinate = j > y ? j - 1 : j;
+                matrix[xCoordinate, yCoordinate] = _data[i, j];
+            }
+        }
+
+        return matrix;
+    }
 }
 
 public class InvalidArrayMultiplicationException : Exception {
