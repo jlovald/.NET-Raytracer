@@ -2,6 +2,7 @@ using System.Drawing;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.VisualBasic.CompilerServices;
+using Raytracer.Common.Tests;
 
 namespace Raytracer.Common.Tests;
 
@@ -13,7 +14,7 @@ public class TupleScenarios
     public void When_w_equals_one_should_be_point(double x, double y, double z, double w, TupleType expectedType)
     {
         var actualTuple = new TupleBuilder().WithX(x).WithY(y).WithZ(z).WithW(w).Build();
-        
+
         actualTuple.Type.Should().Be(expectedType);
     }
 
@@ -45,7 +46,7 @@ public class TupleScenarios
             actualPoint.W.Should().Be(1.0);
         }
     }
-    
+
     [Fact]
     public void When_creating_vector_should_create_point()
     {
@@ -62,7 +63,8 @@ public class TupleScenarios
     [Theory]
     [InlineData(3, -2, 5, 1, -2, 3, 1, 0, TupleType.Point)]
     [InlineData(3, -2, 5, 0, -2, 3, 1, 0, TupleType.Vector)]
-    public void When_adding_a_vector_to_a_vector_components_should_be_added(double x1, double y1, double z1, double w1, double x2, double y2, double z2, double w2, TupleType expectedType)
+    public void When_adding_a_vector_to_a_vector_components_should_be_added(double x1, double y1, double z1, double w1,
+        double x2, double y2, double z2, double w2, TupleType expectedType)
     {
         var from = new TupleBuilder().WithX(x1).WithY(y1).WithZ(z1).WithW(w1).Build();
         var to = new TupleBuilder().WithX(x2).WithY(y2).WithZ(z2).WithW(w2).Build();
@@ -79,62 +81,235 @@ public class TupleScenarios
     }
 
     [Fact]
+    public void Subtracting_two_points_results_in_vector()
+    {
+        var a = Tuple.Point(3, 2, 1);
+        var b = Tuple.Point(5, 6, 7);
+
+        var result = a - b;
+        using (new AssertionScope())
+        {
+            result.X.Should().Be(-2);
+            result.Y.Should().Be(-4);
+            result.Z.Should().Be(-6);
+            result.W.Should().Be(0);
+            result.Type.Should().Be(TupleType.Vector);
+        }
+    }
+
+    [Fact]
+    public void Subtracting_vector_from_point_should_be_point()
+    {
+        var a = Tuple.Point(3, 2, 1);
+        var b = Tuple.Vector(5, 6, 7);
+
+        var result = a - b;
+        using (new AssertionScope())
+        {
+            result.X.Should().Be(-2);
+            result.Y.Should().Be(-4);
+            result.Z.Should().Be(-6);
+            result.W.Should().Be(1);
+            result.Type.Should().Be(TupleType.Point);
+        }
+    }
+
+    [Fact]
+    public void Subtracting_vector_from_vector_should_be_vector()
+    {
+        var a = Tuple.Vector(3, 2, 1);
+        var b = Tuple.Vector(5, 6, 7);
+
+        var result = a - b;
+        using (new AssertionScope())
+        {
+            result.X.Should().Be(-2);
+            result.Y.Should().Be(-4);
+            result.Z.Should().Be(-6);
+            result.W.Should().Be(0);
+            result.Type.Should().Be(TupleType.Vector);
+        }
+    }
+
+    [Fact]
+    public void Subtracting_point_from_vector_should_throw_exception()
+    {
+        var a = Tuple.Vector(3, 2, 1);
+        var b = Tuple.Point(5, 6, 7);
+
+        var action = () => (a - b);
+        action.Should().Throw<InvalidTupleSubtractionException>();
+    }
+
+    [Fact]
     public void Adding_two_points_should_throw_exception()
     {
 
-        Action act = () =>
-        {
-            var point = (Tuple.Point() + Tuple.Point());
-        };
+        Action act = () => { _ = (Tuple.Point() + Tuple.Point()); };
 
         act.Should().Throw<InvalidTupleAdditionException>().WithMessage("Cannot add two points.");
     }
-    
-    
-}
 
-public static class TupleValues
-{
-    public const double PointComponent = 1.0;
-    public const double VectorComponent = 0.0;
-
-}
-public class Tuple(double x = default, double y = default, double z = default, double w = default)
-{
-    private const double EPSILON = 0.00001;
-    public double X { get; } = x;
-    public double Y { get; } = y;
-    public double Z { get; } = z;
-    public double W { get; } = w;
-
-    public static Tuple Point(double x = default, double y = default, double z = default)
+    [Fact]
+    public void Subtracting_a_vector_from_the_zero_vector_inverts_it()
     {
-        return new Tuple(x, y, z, TupleValues.PointComponent);
-    }
-    
-    public static Tuple Vector(double x = default, double y = default, double z = default)
-    {
-        return new Tuple(x, y, z, TupleValues.VectorComponent);
-    }
-    
-    public TupleType Type => Math.Abs(W - 1.0) < EPSILON ? TupleType.Point : TupleType.Vector;
+        var vector = Tuple.Vector(1, -2, 3);
+        var zeroVector = Tuple.Zero();
 
-    public static Tuple operator +(Tuple a, Tuple b)
-    {
-        
-        var result = new Tuple(a.X + b.X, a.Y + b.Y, a.Z + b.Z, a.W + b.W);
-        if (result.W > TupleValues.PointComponent)
+        var resultVector = zeroVector - vector;
+
+        using (new AssertionScope())
         {
-            throw new InvalidTupleAdditionException("Cannot add two points.");
+            resultVector.X.Should().Be(-1);
+            resultVector.Y.Should().Be(2);
+            resultVector.Z.Should().Be(-3);
+            resultVector.W.Should().Be(0);
+            resultVector.Type.Should().Be(TupleType.Vector);
         }
+    }
 
-        return result;
+    [Fact]
+    public void Negating_a_tuple_inverts_it()
+    {
+        var vector = Tuple.Vector(1, -2, 3);
+
+        var resultVector = -vector;
+
+        using (new AssertionScope())
+        {
+            resultVector.X.Should().Be(-1);
+            resultVector.Y.Should().Be(2);
+            resultVector.Z.Should().Be(-3);
+            resultVector.W.Should().Be(0);
+            resultVector.Type.Should().Be(TupleType.Vector);
+        }
+    }
+
+    [Fact]
+    public void Multiplying_a_tuple_by_a_scalar()
+    {
+        var vector = new Tuple(1, -2, 3, -4);
+
+        var resultingTuple = vector * 3.5;
+
+        using (new AssertionScope())
+        {
+            resultingTuple.X.Should().Be(3.5);
+            resultingTuple.Y.Should().Be(-7);
+            resultingTuple.Z.Should().Be(10.5);
+            resultingTuple.W.Should().Be(-14);
+            resultingTuple.Type.Should().Be(TupleType.Vector);
+        }
+    }
+
+    [Fact]
+    public void Multiplying_a_tuple_by_a_fraction()
+    {
+        var vector = new Tuple(1, -2, 3, -4);
+
+        var resultingTuple = vector * 0.5;
+
+        using (new AssertionScope())
+        {
+            resultingTuple.X.Should().Be(0.5);
+            resultingTuple.Y.Should().Be(-1);
+            resultingTuple.Z.Should().Be(1.5);
+            resultingTuple.W.Should().Be(-2);
+            resultingTuple.Type.Should().Be(TupleType.Vector);
+        }
+    }
+
+    [Fact]
+    public void Dividing_a_tuple_by_a_scalar()
+    {
+        var tuple = new Tuple(1, -2, 3, -4);
+
+        var resultingTuple = tuple / 2;
+
+        using (new AssertionScope())
+        {
+            resultingTuple.X.Should().Be(0.5);
+            resultingTuple.Y.Should().Be(-1);
+            resultingTuple.Z.Should().Be(1.5);
+            resultingTuple.W.Should().Be(-2);
+            resultingTuple.Type.Should().Be(TupleType.Vector);
+        }
+    }
+
+    //  TODO throw exception if doing magnitude of point
+    [Theory]
+    [InlineData(1, 0, 0, 1)]
+    [InlineData(0, 1, 0, 1)]
+    [InlineData(0, 0, 1, 1)]
+    [InlineData(1, 2, 3, 3.741657)]
+    [InlineData(-1, -2, -3, 3.741657)]
+    public void Computing_the_magnitude_of_a_vector(double x, double y, double z, double expectedMagnitude)
+    {
+        var vector = Tuple.Vector(x, y, z);
+
+        var actualMagnitude = vector.Magnitude();
+
+        actualMagnitude.Should().BeApproximately(expectedMagnitude, 0.001);
+    }
+
+    // Normalization
+    [Theory]
+    [InlineData(4,0,0, 1, 0, 0)]
+    [InlineData(1,2,3, 0.26726, 0.53452, 0.80178)]
+    public void Normalizing_Vector(double x, double y, double z, double normalizedX, double normalizedY, double normalizedZ)
+    {
+        var vector = Tuple.Vector(x, y, z);
+        var actualNormalizedVector = vector.Normalize();
+        var expectedVector = Tuple.Vector(normalizedX, normalizedY, normalizedZ);
+
+        actualNormalizedVector.ShouldBeApproximately(expectedVector);
     }
     
-    
+    [Theory]
+    [InlineData(1,2,3, 0.26726, 0.53452, 0.80178, 1)]
+    public void Normalizing_Vector_Should_Get_Magnitude(double x, double y, double z, double normalizedX, double normalizedY, double normalizedZ, double magnitude)
+    {
+        var vector = Tuple.Vector(x, y, z);
+        var actualNormalizedVector = vector.Normalize();
+        var expectedVector = Tuple.Vector(normalizedX, normalizedY, normalizedZ);
+        
+        actualNormalizedVector.ShouldBeApproximately(expectedVector);
+        actualNormalizedVector.Magnitude().Should().Be(1);
+    }
+
+    [Fact]
+    public void Dot_Product_Of_Two_Tuples()
+    {
+        var vectorA = new Tuple(1, 2, 3);
+        var vectorB = new Tuple(2, 3, 4);
+
+        var dot = vectorA.Dot(vectorB);
+        dot.Should().Be(20);
+    }
+
+    [Fact]
+    public void Cross_Product_Of_Two_Vectors()
+    {
+        var vectorA = new Tuple(1, 2, 3);
+        var vectorB = new Tuple(2, 3, 4);
+        
+        var aXb = vectorA.Cross(vectorB);
+        var bXa = vectorB.Cross(vectorA);
+        aXb.ShouldBeApproximately(new Tuple(-1, 2, -1));
+        bXa.ShouldBeApproximately(new Tuple(1, -2, 1));
+    }
 }
 
-public class InvalidTupleAdditionException(string message) : Exception(message);
+public static class Extensions
+{
+    public static void ShouldBeApproximately(this Tuple t1, Tuple t2, double tolerance = 0.001)
+    {
+        t1.X.Should().BeApproximately(t2.X, tolerance);
+        t1.Y.Should().BeApproximately(t2.Y, tolerance);
+        t1.Z.Should().BeApproximately(t2.Z, tolerance);
+        t1.W.Should().BeApproximately(t2.W, tolerance);
+    }
+}
 
 internal class TupleBuilder
 {
@@ -173,9 +348,4 @@ internal class TupleBuilder
     {
         return new Tuple(_x, _y, _z, _w);
     }
-}
-
-public enum TupleType{
-    Vector,
-    Point
 }
