@@ -133,7 +133,7 @@ public class MatrixScenarios
     public void Submatrix_of_3x3_should_be_2x2()
     {
         var matrix = new Matrix<int>(new int[,] { {1, 5, 0}, {-3, 2, 7}, {0, 6,-3} });
-        var res = matrix.SubMatrix(0, 2) == new Matrix<int>(new int[,] {{-3, 2}, {0, 6}});
+        var res = matrix.GetSubmatrix(0, 2) == new Matrix<int>(new int[,] {{-3, 2}, {0, 6}});
         res.Should().BeTrue();
     }
     
@@ -141,8 +141,52 @@ public class MatrixScenarios
     public void Submatrix_of_4x4_should_be_3x3()
     {
         var matrix = new Matrix<int>(new int[,] {{ -6,1,1,6}, {-8, 5, 8, 6}, {-1, 0, 8, 2}, {-7, 1, -1, 1}} );
-        var res = matrix.SubMatrix(2, 1) == new Matrix<int>(new int[,] {{-6, 1, 6}, {-8,8,6}, {-7,-1,1}});
+        var res = matrix.GetSubmatrix(2, 1) == new Matrix<int>(new int[,] {{-6, 1, 6}, {-8,8,6}, {-7,-1,1}});
         res.Should().BeTrue();
+    }
+    
+    [Fact]
+    public void Calculating_the_minor_of_a_3x3_matrix()
+    {
+        var matrix = new Matrix<int>(new int[,] {{3, 5, 0}, {2, -1, -7}, {6, -1, 5}});
+        var b = matrix.GetSubmatrix(1, 0);
+
+        var det = b.Determinant();
+        det.Should().Be(25);
+        var minor = matrix.GetMinor(1, 0);
+        minor.Should().Be(25);
+    }
+    
+    [Fact]
+    public void Computing_cofactors()
+    {
+        var matrix = new Matrix<int>(new int[,] {{3, 5, 0}, {2, -1, -7}, {6, -1, 5}});
+        matrix.GetMinor(0, 0).Should().Be(-12);
+        matrix.GetCofactor(0, 0).Should().Be(-12);
+        matrix.GetMinor(1, 0).Should().Be(25);
+        matrix.GetCofactor(1,0).Should().Be(-25);
+        
+    }
+    
+    [Fact]
+    public void Calculate_the_determinant_of_a_3x3_matrix()
+    {
+        var matrix = new Matrix<int>(new[,] {{1,2,6}, {-5, 8, -4}, {2, 6, 4}});
+        matrix.GetCofactor(0, 0).Should().Be(56);
+        matrix.GetCofactor(0, 1).Should().Be(12);
+        matrix.Determinant().Should().Be(-196);
+        
+    }
+    
+    [Fact]
+    public void Calculate_the_determinant_of_a_4x4_matrix()
+    {
+        var matrix = new Matrix<int>(new[,]
+            { { -2, -8, 3, 5 }, { -3, 1, 7, 3 }, { 1, 2, -9, 6 }, { -6, 7, 7, -9 } });
+        matrix.GetCofactor(0, 0).Should().Be(690);
+        matrix.GetCofactor(0, 2).Should().Be(210);
+        matrix.GetCofactor(0, 3).Should().Be(51);
+        matrix.Determinant().Should().Be(-4071);
     }
 }
 
@@ -317,11 +361,21 @@ public class Matrix<T> where T : INumber<T>
 
     public T Determinant()
     {
-        //  TODO: Improve
-        return _data[0,0] * _data[1,1] - _data[0,1] * _data[1,0];
-    }
+        if (Rows == 2 && Cols == 2)
+        {
+            return _data[0,0] * _data[1,1] - _data[0,1] * _data[1,0];
+        }
 
-    public Matrix<T> SubMatrix(int x, int y)
+        T det = default;
+        for (int i = 0; i < Cols; i++)
+        {
+            det = det + _data[0, i] * GetCofactor(0, i);
+        }
+
+        return det;
+    }
+    
+    public Matrix<T> GetSubmatrix(int x, int y)
     {
         if (x < 0 || x >= Cols) throw new Exception();
         if (y < 0 || y >= Rows) throw new Exception();
@@ -343,6 +397,30 @@ public class Matrix<T> where T : INumber<T>
 
         return matrix;
     }
+
+    public T GetMinor(int col, int row)
+    {
+        return GetSubmatrix(col, row).Determinant();
+    }
+
+    public T GetCofactor(int col, int row)
+    {
+        var sign = (col + row) % 2 == 0 ? 1 : -1;
+        return MultiplyBySign(GetMinor(col, row), sign);
+    }
+    //  WHY DID I HAVE TO DO IT WITH GENERICS FUCK MY LIFE.
+    private T MultiplyBySign(T value, int sign)
+    {
+        if (sign == 1)
+        {
+            return value;
+        }
+        else
+        {
+            return (dynamic)value * -1; // Using dynamic for runtime resolution
+        }
+    }
+    
 }
 
 public class InvalidArrayMultiplicationException : Exception {
